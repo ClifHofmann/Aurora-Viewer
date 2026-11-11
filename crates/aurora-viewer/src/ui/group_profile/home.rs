@@ -326,7 +326,19 @@ mod tests {
             aurora_i18n::tr!("ui-chat-yesterday").to_lowercase()
         );
         let oct = crate::ui::land::months()[9];
-        assert_eq!(notice_date(at(2026, 10, 3), now), format!("3 {oct}"));
-        assert_eq!(notice_date(at(2025, 10, 3), now), format!("3 {oct} 2025"));
+        match aurora_i18n::language() {
+            "ja" => {
+                assert_eq!(notice_date(at(2026, 10, 3), now), "10月3日");
+                assert_eq!(notice_date(at(2025, 10, 3), now), "2025年10月3日");
+            }
+            "de" => {
+                assert_eq!(notice_date(at(2026, 10, 3), now), format!("3. {oct}"));
+                assert_eq!(notice_date(at(2025, 10, 3), now), format!("3. {oct} 2025"));
+            }
+            _ => {
+                assert_eq!(notice_date(at(2026, 10, 3), now), format!("3 {oct}"));
+                assert_eq!(notice_date(at(2025, 10, 3), now), format!("3 {oct} 2025"));
+            }
+        }
     }
 }

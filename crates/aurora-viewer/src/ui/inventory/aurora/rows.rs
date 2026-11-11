@@ -701,9 +701,21 @@ pub(super) mod tests {
         // 2026-10-14 and 2025-09-03, read on 2026-10-19
         let now = 1_792_368_000;
         let october = short_date(1_791_936_000, now);
-        assert!(october.starts_with("14 ") && !october.contains("2026"), "{october}");
         let last_year = short_date(1_756_857_600, now);
-        assert!(last_year.starts_with("3 ") && last_year.ends_with("2025"), "{last_year}");
+        match aurora_i18n::language() {
+            "ja" => {
+                assert!(october.contains("14") && !october.contains("2026"), "{october}");
+                assert!(last_year.contains('3') && last_year.contains("2025"), "{last_year}");
+            }
+            "de" => {
+                assert!(october.starts_with("14.") && !october.contains("2026"), "{october}");
+                assert!(last_year.starts_with("3.") && last_year.ends_with("2025"), "{last_year}");
+            }
+            _ => {
+                assert!(october.starts_with("14 ") && !october.contains("2026"), "{october}");
+                assert!(last_year.starts_with("3 ") && last_year.ends_with("2025"), "{last_year}");
+            }
+        }
         assert_eq!(short_date(0, now), "");
     }
 

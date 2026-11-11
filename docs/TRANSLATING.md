@@ -1,11 +1,11 @@
 # Translating the viewer
 
 Each language has a Fluent catalogue in `crates/aurora-i18n/locales/`.
-English is in `en.ftl`, French in `fr.ftl` and Japanese in `ja.ftl`. The
-files are embedded at build time; adding `de.ftl`, for example, adds a
-language to the Preferences without changing the Rust code. The file name
-must be a language identifier, such as `de` or `pt-BR`, and `language-name`
-holds the name that its speakers recognise.
+English is in `en.ftl`, French in `fr.ftl`, German in `de.ftl` and Japanese
+in `ja.ftl`. The files are embedded at build time; adding a new `.ftl` file
+(such as `pt-BR.ftl`) adds a language to the Preferences without changing
+the Rust code. The file name must be a language identifier, such as `de` or
+`pt-BR`, and `language-name` holds the name that its speakers recognise.
 
 The embedded fonts only cover European scripts. Other scripts, Japanese
 included, are drawn by the system fallback fonts (Meiryo UI or Yu Gothic UI
@@ -127,6 +127,7 @@ $env:AURORA_DEMO = '1'
 $env:AURORA_DEMO_OPTIONS = '1'
 cargo run -p aurora-viewer -- --language en --title "Test langue-viewer"
 cargo run -p aurora-viewer -- --language fr --title "Test langue-viewer"
+cargo run -p aurora-viewer -- --language de --title "Test langue-viewer"
 cargo run -p aurora-viewer -- --language ja --title "Test langue-viewer"
 ```
 

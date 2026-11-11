@@ -93,16 +93,21 @@ fn saved_choice_system_locale_and_english_fallback() {
     assert_eq!(resolve_language("unknown", "fr", &languages), "en");
     assert_eq!(resolve_language("default", "", &languages), "en");
     assert_eq!(resolve_language("pt-BR", "fr", &["en", "pt-BR", "pt"]), "pt-BR");
-    let languages = ["en", "fr", "ja"];
+    let languages = ["en", "fr", "ja", "de"];
     assert_eq!(resolve_language("default", "ja-JP", &languages), "ja");
     assert_eq!(resolve_language("ja", "en-US", &languages), "ja");
+    assert_eq!(resolve_language("default", "de-DE", &languages), "de");
+    assert_eq!(resolve_language("default", "de-AT", &languages), "de");
+    assert_eq!(resolve_language("default", "de-CH", &languages), "de");
+    assert_eq!(resolve_language("de", "en-US", &languages), "de");
     assert!(SOURCES.iter().any(|&(code, _)| code == "ja"), "Japanese catalog is bundled");
+    assert!(SOURCES.iter().any(|&(code, _)| code == "de"), "German catalog is bundled");
 }
 
 #[test]
 fn fluent_renders_english_and_french_plural_rules() {
     use fluent_bundle::{FluentArgs, FluentBundle, FluentResource};
-    for &(code, source) in SOURCES.iter().filter(|&&(code, _)| code == "en" || code == "fr") {
+    for &(code, source) in SOURCES.iter().filter(|&&(code, _)| code == "en" || code == "fr" || code == "de") {
         let mut bundle = FluentBundle::new(vec![code.parse().unwrap()]);
         bundle.set_use_isolating(false);
         bundle.add_resource(FluentResource::try_new(source.to_owned()).unwrap()).unwrap();
@@ -117,7 +122,10 @@ fn fluent_renders_english_and_french_plural_rules() {
                 ("en", 1) => "item",
                 ("en", _) => "items",
                 ("fr", 0 | 1) => "élément",
-                _ => "éléments",
+                ("fr", _) => "éléments",
+                ("de", 1) => "Element",
+                ("de", _) => "Elemente",
+                _ => unreachable!(),
             };
             assert_eq!(actual, format!("{count} {word}"));
         }
@@ -128,6 +136,10 @@ fn fluent_renders_english_and_french_plural_rules() {
 fn short_dates_follow_the_language_order() {
     use aurora_i18n::tr_in;
     assert_eq!(tr_in!("en", "date-day-month", day = "28", month = "Oct"), "28 Oct");
+    assert_eq!(
+        tr_in!("de", "date-day-month", day = "28", month = tr_in!("de", "extra-oct")),
+        "28. Okt."
+    );
     assert_eq!(
         tr_in!("ja", "date-day-month", day = "28", month = tr_in!("ja", "extra-oct")),
         "10月28日"
@@ -228,4 +240,14 @@ fn japanese_falls_back_to_english_only_for_unknown_keys() {
         aurora_i18n::text_in("en", "language-system")
     );
     assert_eq!(aurora_i18n::text_in("ja", "unknown-key"), "unknown-key");
+}
+
+#[test]
+fn german_dates_and_numbers_follow_german_conventions() {
+    assert_eq!(
+        aurora_i18n::tr_in!("de", "profile-date", month = "09", day = "12", year = "2026"),
+        "12.09.2026"
+    );
+    assert_eq!(aurora_i18n::text_in("de", "number-decimal-separator"), ",");
+    assert_eq!(aurora_i18n::text_in("de", "number-thousands-separator"), ".");
 }
