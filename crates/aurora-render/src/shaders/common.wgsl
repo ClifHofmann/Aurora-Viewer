@@ -1267,7 +1267,15 @@ fn shadow_taps(span: f32, texel: f32) -> u32 {
 // its tile, so that a blend never takes light from a cascade that does not
 // see the point.
 fn cascade_shadow(world_pos: vec3<f32>, n: vec3<f32>, cascade: u32) -> f32 {
-    let bias_n = n * (0.02 + 0.04 * f32(cascade));
+    // Grazing faces take the full normal offset across the cascade's texels;
+    // faces turned towards the sun take none (the receiver bias and the
+    // shadow pipelines' slope bias cover them), as the Legacy Viewer scales
+    // its offset by 1 - N.L (sampleDirectionalShadow, deferred/shadowUtil.glsl),
+    // so a close caster such as hair over the neck is not skipped by a 2 cm
+    // push towards the light.
+    let nl = clamp(dot(n, frame.sun_dir.xyz), 0.0, 1.0);
+    let scale_n = select(1.0 - nl, 1.0, (frame.light_mode.z & SHADOW_BIAS_LEGACY) != 0u);
+    let bias_n = n * (0.02 + 0.04 * f32(cascade)) * scale_n;
     let m = frame.cascade_vp[cascade];
     let lp = m * vec4<f32>(world_pos + bias_n, 1.0);
     let ndc = lp.xyz / lp.w;

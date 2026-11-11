@@ -115,9 +115,15 @@ fn depth_delta(w: ShadowWindow, sample_depth: f32, k: i32) -> f32 {
     let v = (sample_depth * w.scale - w.start) * -w.z_sign;
     // the pixel's depth seen from the sample, in front of the ray by
     // start × (distance / distance_k - 1)
+    // In a close-up, one unit (0.5 % of z) shrinks to a few millimetres,
+    // thinner than an ear, a jaw or a lock of hair: the shell keeps at least
+    // half of `depth` (2.5 cm, one unit at 5 m) and fades over the second
+    // half of `deep` instead of a 0.25-unit step.
     let distance_k = max(w.distance + f32(k) * w.direction, 1.0);
     let receding = w.start * f32(k) * w.direction * w.z_sign / distance_k;
-    return max(1.0 - v, v - clamp(receding, 1.0, w.depth));
+    let deep = clamp(receding, max(1.0, 0.5 * w.depth), w.depth);
+    let back = 1.0 + (v - (1.0 + deep)) / (2.0 * deep - 1.0);
+    return max(1.0 - v, back);
 }
 
 fn isign(v: vec2<i32>) -> vec2<i32> {

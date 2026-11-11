@@ -1061,6 +1061,34 @@ mod tests {
         assert_eq!(Override::None.occluder_depth(), OCCLUDER_DEPTH);
     }
 
+    /// Close-up portraits (z = 0.35 m, where one surface-thickness unit is
+    /// 1.75 mm) keep at least half of OCCLUDER_DEPTH (2.5 cm) and fade
+    /// smoothly over the back of the window instead of cutting off in 0.44 mm;
+    /// shell (depth = 1) stays Bend's |v - 1|.
+    #[test]
+    fn closeup_window_keeps_solid_casters_and_fades_smoothly() {
+        let delta = |v: f32, receding: f32, depth: f32| -> f32 {
+            let deep = receding.clamp(1.0f32.max(0.5 * depth), depth);
+            let back = 1.0 + (v - (1.0 + deep)) / (2.0 * deep - 1.0);
+            (1.0 - v).max(back)
+        };
+        // shell (depth = 1): identical to max(1 - v, v - 1) = |v - 1|
+        for v in [-0.5f32, 0.0, 0.25, 1.0, 1.75, 2.0, 3.0] {
+            assert!((delta(v, -5.0, 1.0) - (v - 1.0).abs()).abs() < 1e-6);
+        }
+        // At z = 0.35 m, 1 unit = 1.75 mm, 5 cm = 28.57 units. An ear or hair
+        // lock 1 cm (5.7 units) in front of the neck is in full shadow
+        // (<= 0.75) even with the sun behind the camera (receding < 0), and
+        // fades between 1.5 cm and 2.7 cm instead of stepping in 0.25 units.
+        let depth = OCCLUDER_DEPTH / (SURFACE_THICKNESS * 0.35);
+        let one_cm = 0.01 / (SURFACE_THICKNESS * 0.35);
+        assert!(delta(one_cm, -4.0, depth) <= 0.75);
+        let two_cm = 0.02 / (SURFACE_THICKNESS * 0.35);
+        let d_two_cm = delta(two_cm, -4.0, depth);
+        assert!(d_two_cm > 0.75 && d_two_cm < 1.0, "{d_two_cm}");
+        assert!(delta(depth + 2.0, -4.0, depth) >= 1.0);
+    }
+
     #[test]
     fn override_keeps_the_mask_and_alternates_every_second() {
         assert_eq!(Override::parse(None), Override::None);
